@@ -346,9 +346,9 @@ const DUNGEONS = [
     enemies:['蒸気機関士の亡霊','錆びた改札鬼','SLの魂'],
     boss:{emoji:'🚂', name:'大怨霊・鉄道王', hp:60, atk:12},
     quizzes:[
-      {id:'s1', label:'問題①', answers:['1914','1914年']},
-      {id:'s2', label:'問題②', answers:['ローマ数字','ローマすうじ']},
-      {id:'s3', label:'問題③', answers:['行き止まり','いきどまり','止まっている','とまっている']},
+      {id:'s1', label:'問題①', q:'この駅は何年に建てられたでしょう？', answers:['1914','1914年']},
+      {id:'s2', label:'問題②', q:'駅の改札の上にある時計の数字は何という数字？', answers:['ローマ数字','ローマすうじ']},
+      {id:'s3', label:'問題③', q:'ホームの線路を見てみよう。線路は駅の先でどうなっているかな？', answers:['行き止まり','いきどまり','止まっている','とまっている']},
     ]
   },
   {
@@ -358,9 +358,9 @@ const DUNGEONS = [
     enemies:['明治の機関士','ヘッドマークの幽霊','ゼロマイルの番人'],
     boss:{emoji:'🔴', name:'赤レンガの守護神', hp:60, atk:12},
     quizzes:[
-      {id:'r1', label:'問題①', answers:['1891','1891年']},
-      {id:'r2', label:'問題②', answers:['赤','赤レンガ','あか','赤色']},
-      {id:'r3', label:'問題③', answers:['ゼロマイルひょうしき','0マイル標識','ゼロマイル標識','ぜろまいるひょうしき']},
+      {id:'r1', label:'問題①', q:'この建物は何年に建てられたでしょう？', answers:['1891','1891年']},
+      {id:'r2', label:'問題②', q:'建物の外壁の色は何色？', answers:['赤','赤レンガ','あか','赤色']},
+      {id:'r3', label:'問題③', q:'入口のそばにある「0哩標識」、なんと読む？', answers:['ゼロマイルひょうしき','0マイル標識','ゼロマイル標識','ぜろまいるひょうしき']},
     ]
   },
   {
@@ -370,9 +370,9 @@ const DUNGEONS = [
     enemies:['怨念の船荷番','港の亡霊商人','暗礁の守護者'],
     boss:{emoji:'🐙', name:'深海の大貿易魔', hp:80, atk:15},
     quizzes:[
-      {id:'o1', label:'問題①', answers:['1917','1917年']},
-      {id:'o2', label:'問題②', answers:['八角形','はっかくけい','8角形','8']},
-      {id:'o3', label:'問題③', answers:['オレンジ','オレンジ色','オレンジいろ','だいだい','橙']},
+      {id:'o1', label:'問題①', q:'この建物は何年に建てられたでしょう？', answers:['1917','1917年']},
+      {id:'o2', label:'問題②', q:'建物の角にある塔は何角形？外から数えてみよう！', answers:['八角形','はっかくけい','8角形','8']},
+      {id:'o3', label:'問題③', q:'建物の外壁のタイルは何色？', answers:['オレンジ','オレンジ色','オレンジいろ','だいだい','橙']},
     ]
   },
   {
@@ -382,9 +382,9 @@ const DUNGEONS = [
     enemies:['量子の幽霊','相対性の番人','時空の歪み'],
     boss:{emoji:'👓', name:'怨霊博士アインシュタイン', hp:80, atk:15},
     quizzes:[
-      {id:'m1', label:'問題①', answers:['1921','1921年']},
-      {id:'m2', label:'問題②', answers:['1922','1922年']},
-      {id:'m3', label:'問題③', answers:['重要文化財','じゅうようぶんかざい','国の重要文化財']},
+      {id:'m1', label:'問題①', q:'この建物は何年に建てられたでしょう？', answers:['1921','1921年']},
+      {id:'m2', label:'問題②', q:'アインシュタインがここに泊まったのは何年？', answers:['1922','1922年']},
+      {id:'m3', label:'問題③', q:'この建物は国の何に指定されている？案内板を見てみよう！', answers:['重要文化財','じゅうようぶんかざい','国の重要文化財']},
     ]
   },
   {
@@ -394,9 +394,9 @@ const DUNGEONS = [
     enemies:['税関の亡霊番人','密輸の怨霊','赤レンガの守衛'],
     boss:{emoji:'🧱', name:'明治の大税関鬼', hp:80, atk:15},
     quizzes:[
-      {id:'c1', label:'問題①', answers:['1912','1912年']},
-      {id:'c2', label:'問題②', answers:['赤レンガ','赤','あか','赤色']},
-      {id:'c3', label:'問題③', answers:['輸出入','ゆしゅつにゅう','輸出入の荷物をチェックする','関税','かんぜい']},
+      {id:'c1', label:'問題①', q:'この建物は何年に建てられたでしょう？', answers:['1912','1912年']},
+      {id:'c2', label:'問題②', q:'建物の外壁は何レンガ？', answers:['赤レンガ','赤','あか','赤色']},
+      {id:'c3', label:'問題③', q:'税関とはどんな仕事をする場所？', answers:['輸出入','ゆしゅつにゅう','輸出入の荷物をチェックする','関税','かんぜい']},
     ]
   },
   {
@@ -406,9 +406,9 @@ const DUNGEONS = [
     enemies:['橋守の精霊','海風の怪','跳ね橋の番人'],
     boss:{emoji:'🔵', name:'海峡の跳ね橋魔', hp:100, atk:16},
     quizzes:[
-      {id:'b1', label:'問題①', answers:['1993','1993年']},
-      {id:'b2', label:'問題②', answers:['108','108m','108メートル']},
-      {id:'b3', label:'問題③', answers:['6','6回','ろっかい']},
+      {id:'b1', label:'問題①', q:'この橋は何年に作られたでしょう？', answers:['1993','1993年']},
+      {id:'b2', label:'問題②', q:'この橋は全長何メートル？', answers:['108','108m','108メートル']},
+      {id:'b3', label:'問題③', q:'橋が1日に跳ね上がる回数はいくつ？', answers:['6','6回','ろっかい']},
     ]
   },
   {
@@ -418,9 +418,9 @@ const DUNGEONS = [
     enemies:['昭和の呼び込み霊','アーケードの影','看板の怨念'],
     boss:{emoji:'🏮', name:'昭和の大店主霊', hp:100, atk:16},
     quizzes:[
-      {id:'sk1', label:'問題①', answers:['雨でもぬれない','ぬれない','雨','あめ','屋根がある']},
-      {id:'sk2', label:'問題②', answers:['銀天街','ぎんてんがい','GINTENGAI']},
-      {id:'sk3', label:'問題③', answers:['自由回答']}, // 自由回答は常に正解扱い
+      {id:'sk1', label:'問題①', q:'アーケード商店街のいいところはなんでしょう？', answers:['雨でもぬれない','ぬれない','雨','あめ','屋根がある']},
+      {id:'sk2', label:'問題②', q:'このアーケードは何丁目にある？入口の看板を見てみよう！', answers:['1丁目','一丁目','いちちょうめ','1','栄町1丁目']},
+      {id:'sk3', label:'問題③', q:'アーケードの屋根は何色？', answers:['自由回答']},
     ]
   },
   {
@@ -430,9 +430,9 @@ const DUNGEONS = [
     enemies:['海峡の幻影','潮流の精霊','海底の守護者'],
     boss:{emoji:'🌊', name:'関門海峡の大海神', hp:100, atk:18},
     quizzes:[
-      {id:'mu1', label:'問題①', answers:['2003','2003年']},
-      {id:'mu2', label:'問題②', answers:['関門海峡','かんもんかいきょう']},
-      {id:'mu3', label:'問題③', answers:['福岡県と山口県','山口県と福岡県','ふくおかとやまぐち','福岡と山口']},
+      {id:'mu1', label:'問題①', q:'この建物は何年に建てられたでしょう？', answers:['2003','2003年']},
+      {id:'mu2', label:'問題②', q:'このミュージアムのテーマは何？入口を見てみよう！', answers:['関門海峡','かんもんかいきょう']},
+      {id:'mu3', label:'問題③', q:'関門海峡でつながっている2つの県はどこ？', answers:['福岡県と山口県','山口県と福岡県','ふくおかとやまぐち','福岡と山口']},
     ]
   },
   {
@@ -442,9 +442,9 @@ const DUNGEONS = [
     enemies:['建築家の亡霊','白亜の守衛','宮殿の幻影'],
     boss:{emoji:'🏰', name:'建築の大亡霊ロッシ', hp:100, atk:18},
     quizzes:[
-      {id:'h1', label:'問題①', answers:['1998','1998年']},
-      {id:'h2', label:'問題②', answers:['アルド・ロッシ','アルドロッシ','aldo rossi']},
-      {id:'h3', label:'問題③', answers:['白','しろ','白色','クリーム色','クリーム']},
+      {id:'h1', label:'問題①', q:'このホテルは何年に建てられたでしょう？', answers:['1998','1998年']},
+      {id:'h2', label:'問題②', q:'設計した建築家の名前は？案内板を見てみよう！', answers:['アルド・ロッシ','アルドロッシ','aldo rossi']},
+      {id:'h3', label:'問題③', q:'ホテルの外壁は何色？', answers:['白','しろ','白色','クリーム色','クリーム']},
     ]
   },
   {
@@ -454,9 +454,9 @@ const DUNGEONS = [
     enemies:['風の魔術師','鳥形の見張り番','展望の幻影'],
     boss:{emoji:'🌀', name:'天空の魔法陣守護者', hp:120, atk:20},
     quizzes:[
-      {id:'t1', label:'問題①', answers:['1999','1999年']},
-      {id:'t2', label:'問題②', answers:['103','103m','103メートル']},
-      {id:'t3', label:'問題③', answers:['山口県','やまぐちけん','山口']},
+      {id:'t1', label:'問題①', q:'このタワーは何年に建てられたでしょう？', answers:['1999','1999年']},
+      {id:'t2', label:'問題②', q:'高さは何メートル？', answers:['103','103m','103メートル']},
+      {id:'t3', label:'問題③', q:'展望室から見える海の向こうは何県？', answers:['山口県','やまぐちけん','山口']},
     ]
   },
 ];
@@ -618,12 +618,12 @@ function renderExplore(){
     html+=`<div class="quiz-card${solved?' solved':''}">
       <div class="quiz-card-header">
         <span class="quiz-num">${q.label}</span>
-        <span class="quiz-card-title">${isFree?'施設の中を観察しよう':'紙の問題に答えよう'}</span>
         ${solved?'<span class="quiz-solved-badge">✅ 正解</span>':''}
       </div>
+      <div class="quiz-card-title" style="font-size:13px;color:var(--text);line-height:1.6;margin-bottom:4px">${q.q}</div>
       ${!solved?`
         <div class="answer-row">
-          <input class="answer-input" id="input-${q.id}" type="text" placeholder="${isFree?'気づいたことを入力':'こたえを入力'}" autocomplete="off">
+          <input class="answer-input" id="input-${q.id}" type="text" placeholder="${isFree?'なんでも入力してOK':'こたえを入力'}" autocomplete="off">
           <button class="submit-btn" onclick="submitAnswer('${q.id}')">決定</button>
         </div>
         <div class="answer-feedback" id="fb-${q.id}" style="display:none"></div>
