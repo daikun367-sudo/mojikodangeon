@@ -243,9 +243,12 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
     <span class="title-en">MOJIKO DUNGEON RPG</span>
     <span class="title-ja">門司港ダンジョン</span>
   </div>
-  <div class="gps-badge">
-    <div class="gps-dot" id="gpsDot"></div>
-    <span id="gpsLabel">GPS待機中</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="gps-badge">
+      <div class="gps-dot" id="gpsDot"></div>
+      <span id="gpsLabel">GPS待機中</span>
+    </div>
+    <button onclick="resetSave()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:4px 8px;font-size:10px;font-family:'Noto Sans JP',sans-serif;cursor:pointer">リセット</button>
   </div>
 </header>
 <main>
@@ -675,6 +678,7 @@ function submitAnswer(qid){
     fb.className='answer-feedback ok';
     fb.textContent=isFree?'✅ 記録した！':'🎉 正解！';
     solvedQuizzes[qid]=true;
+    saveGame();
     setTimeout(()=>renderExplore(),700);
   } else {
     inp.classList.add('wrong');
@@ -862,7 +866,7 @@ function battleEnd(win){
   setTimeout(()=>{
     document.getElementById('bossScreen').classList.remove('open');
     if(win){
-      cleared[d.id]=true;updateMarkers();buildCards();
+      cleared[d.id]=true;updateMarkers();buildCards();saveGame();
       // ラスボス撃破チェック
       if(d.id==='mekarijinja'){
         setTimeout(()=>showEnding(),1000);
@@ -902,6 +906,7 @@ function startGame(){
   const inp = document.getElementById('nameInput');
   const name = inp.value.trim();
   playerName = name || '勇者';
+  saveGame();
   document.getElementById('openingScreen').classList.remove('open');
   buildCards();
   startGPS();
@@ -985,7 +990,23 @@ function checkLastBoss(){
     setTimeout(()=>showUnlockScreen(), 800);
   }
 }
-// buildCards/startGPSはstartGame()から呼ばれる
+// 起動時：セーブデータがあればオープニングスキップ
+(function(){
+  const hasSave = loadGame();
+  if(hasSave && playerName){
+    document.getElementById('openingScreen').classList.remove('open');
+    buildCards();
+    startGPS();
+    checkLastBoss();
+    // ラスボス解放済みならマーカー追加
+    if(DUNGEONS.every(d=>cleared[d.id])){
+      setTimeout(()=>addLastBossMarker(), 500);
+    }
+  }
+  // nameInputにも名前をセット
+  const inp = document.getElementById('nameInput');
+  if(inp && playerName && playerName !== '勇者') inp.value = playerName;
+})();
 </script>
 </body>
 </html>
