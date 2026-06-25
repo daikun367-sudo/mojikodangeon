@@ -990,22 +990,50 @@ function checkLastBoss(){
     setTimeout(()=>showUnlockScreen(), 800);
   }
 }
-// 起動時：セーブデータがあればオープニングスキップ
+// ══ セーブ・ロード ═══════════════════════════════════
+const SAVE_KEY = 'mojiko_dungeon_save';
+
+function saveGame(){
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      playerName, cleared, party, solvedQuizzes
+    }));
+  } catch(e){}
+}
+
+function loadGame(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    const data = JSON.parse(raw);
+    if(data.playerName) playerName = data.playerName;
+    if(data.cleared)    Object.assign(cleared, data.cleared);
+    if(data.party)      Object.assign(party, data.party);
+    if(data.solvedQuizzes) Object.assign(solvedQuizzes, data.solvedQuizzes);
+    return true;
+  } catch(e){ return false; }
+}
+
+function resetSave(){
+  if(!confirm('セーブデータを消して最初からやり直しますか？')) return;
+  try { localStorage.removeItem(SAVE_KEY); } catch(e){}
+  location.reload();
+}
+
+// ══ 起動 ══════════════════════════════════════════════
 (function(){
   const hasSave = loadGame();
-  if(hasSave && playerName){
+  if(hasSave && playerName && playerName !== '勇者'){
     document.getElementById('openingScreen').classList.remove('open');
     buildCards();
     startGPS();
     checkLastBoss();
-    // ラスボス解放済みならマーカー追加
     if(DUNGEONS.every(d=>cleared[d.id])){
       setTimeout(()=>addLastBossMarker(), 500);
     }
+    const inp = document.getElementById('nameInput');
+    if(inp) inp.value = playerName;
   }
-  // nameInputにも名前をセット
-  const inp = document.getElementById('nameInput');
-  if(inp && playerName && playerName !== '勇者') inp.value = playerName;
 })();
 </script>
 </body>
