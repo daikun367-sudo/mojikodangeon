@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>門司港ダンジョンRPG</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Cinzel:wght@700&display=swap');
+
+  :root {
+    --bg:       #0d0d14;
+    --panel:    #13131f;
+    --border:   #2a2a42;
+    --gold:     #c8a84b;
+    --gold-dim: #7a6330;
+    --red:      #e05050;
+    --cyan:     #4ecdc4;
+    --text:     #d4cfc8;
+    --text-dim: #7a7870;
+    --locked:   #3a3a50;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── ヘッダー ── */
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .title-block {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .title-en {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--gold-dim);
+  }
+
+  .title-ja {
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+  }
+
+  .gps-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+  }
+
+  .gps-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: background 0.3s;
+  }
+  .gps-dot.active { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+  .gps-dot.error  { background: var(--red); }
+
+  /* ── メインレイアウト ── */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── 地図 ── */
+  #map {
+    flex: 1;
+    min-height: 0;
+    z-index: 1;
+  }
+
+  /* Leafletのアトリビューションを小さく */
+  .leaflet-control-attribution { font-size: 9px !important; }
+
+  /* ── 下パネル ── */
+  .bottom-panel {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .panel-label {
+    font-size: 10px;
+    color: var(--gold-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* ダンジョンカード横スクロール */
+  .dungeon-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .dungeon-scroll::-webkit-scrollbar { display: none; }
+
+  .dungeon-card {
+    flex-shrink: 0;
+    width: 130px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dungeon-card.nearby {
+    border-color: var(--gold);
+  }
+
+  .dungeon-card.nearby::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(200,168,75,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .dungeon-card:active { transform: scale(0.97); }
+
+  .card-icon { font-size: 22px; margin-bottom: 4px; }
+
+  .card-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .card-status {
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .status-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--locked);
+  }
+
+  .dungeon-card.nearby .status-dot { background: var(--gold); }
+
+  .status-text { color: var(--text-dim); }
+  .dungeon-card.nearby .status-text { color: var(--gold); }
+
+  .card-dist {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* 解放ボタン */
+  .enter-btn {
+    display: none;
+    margin-top: 8px;
+    width: 100%;
+    background: var(--gold);
+    color: #0d0d14;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 0;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+  .dungeon-card.nearby .enter-btn { display: block; }
+
+  /* ── GPSなしデモモード ── */
+  .demo-bar {
+    background: rgba(78,205,196,0.1);
+    border-top: 1px solid rgba(78,205,196,0.3);
+    padding: 6px 16px;
+    font-size: 11px;
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* ── モーダル ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    max-width: 480px;
+    padding: 24px 20px 32px;
+    animation: slideUp 0.25s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .modal-icon { font-size: 36px; }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1.2;
+  }
+
+  .modal-subtitle {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .modal-desc {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 16px;
+    border-left: 2px solid var(--gold-dim);
+    padding-left: 10px;
+  }
+
+  .modal-enemies {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+  }
+
+  .enemies-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  .enemy-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .enemy-tag {
+    font-size: 11px;
+    background: var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--text);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-enter {
+    flex: 1;
+    background: var(--gold);
+    color: #0d0d14;
+    border: none;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-close {
+    background: var(--bg);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+  }
+
+  /* カスタムマーカー */
+  .custom-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+  .marker-bubble {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 18px;
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    transition: border-color 0.3s;
+  }
+  .marker-bubble.nearby-marker {
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(200,168,75,0.4);
+  }
+  .marker-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text);
+    background: rgba(13,13,20,0.85);
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-top: 2px;
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 自分マーカー */
+  .player-marker-inner {
+    width: 14px; height: 14px;
+    background: var(--cyan);
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--cyan);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 6px var(--cyan); }
+    50%      { box-shadow: 0 0 16px var(--cyan); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <span class="title-en">MOJIKO DUNGEON RPG</span>
+    <span class="title-ja">門司港ダンジョン</span>
+  </div>
+  <div class="gps-badge">
+    <div class="gps-dot" id="gpsDot"></div>
+    <span id="gpsLabel">GPS待機中</span>
+  </div>
+</header>
+
+<main>
+  <div id="map"></div>
+
+  <div class="demo-bar" id="demoBar" style="display:none">
+    📍 デモモード：地図をタップして位置をシミュレート
+  </div>
+
+  <div class="bottom-panel">
+    <div class="panel-label">▸ ダンジョン一覧</div>
+    <div class="dungeon-scroll" id="dungeonScroll"></div>
+  </div>
+</main>
+
+<!-- モーダル -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-icon" id="modalIcon"></div>
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-subtitle" id="modalSubtitle"></div>
+      </div>
+    </div>
+    <div class="modal-desc" id="modalDesc"></div>
+    <div class="modal-enemies">
+      <div class="enemies-label">出現する敵</div>
+      <div class="enemy-list" id="enemyList"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-close" onclick="document.getElementById('modalOverlay').classList.remove('open')">閉じる</button>
+      <button class="btn-enter" id="enterBtn">ダンジョンへ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── データ ───────────────────────────────────────────────
+const DUNGEONS = [
+  {
+    id: 'station',
+    name: '門司港駅',
+    icon: '🏛️',
+    lat: 33.9425,
+    lng: 130.9618,
+    radius: 80,
+    level: 1,
+    theme: '蒸気と記憶の迷宮',
+    desc: '大正3年創建、九州初の鉄道発祥の地。改札の向こうに広がるのは、蒸気が充満した時間の迷宮だ。',
+    enemies: ['蒸気機関士の亡霊', '錆びた改札鬼', 'SLの魂'],
+  },
+  {
+    id: 'osaka',
+    name: '旧大阪商船',
+    icon: '⚓',
+    lat: 33.9431,
+    lng: 130.9634,
+    radius: 60,
+    level: 2,
+    theme: '海商の呪われた船室',
+    desc: '八角形の塔を持つ大正6年の洋館。かつて荷物番号札が飛び交ったこの場所に、貿易商の怨念が漂う。',
+    enemies: ['怨念の船荷番', '港の亡霊商人', '暗礁の守護者'],
+  },
+  {
+    id: 'mitsui',
+    name: '旧門司三井倶楽部',
+    icon: '🏚️',
+    lat: 33.9419,
+    lng: 130.9621,
+    radius: 70,
+    level: 3,
+    theme: 'アインシュタインの亡霊館',
+    desc: '1921年にアインシュタインが宿泊した洋館。木造の廊下には今も学者の残留思念が刻まれている。',
+    enemies: ['量子の幽霊', '相対性の番人', '時空の歪み'],
+  },
+  {
+    id: 'bridge',
+    name: '関門橋',
+    icon: '🌉',
+    lat: 33.9463,
+    lng: 130.9702,
+    radius: 100,
+    level: 5,
+    theme: '海峡の巨神殿',
+    desc: '本州と九州を結ぶ全長1068mの橋。橋脚深くに眠る海峡の神が、挑む者を試す。',
+    enemies: ['関門海峡の竜', '潮流の精霊', '橋守の巨人'],
+  },
+  {
+    id: 'retro',
+    name: '門司港レトロ展望室',
+    icon: '🗼',
+    lat: 33.9414,
+    lng: 130.9628,
+    radius: 60,
+    level: 4,
+    theme: '高みの魔法陣',
+    desc: '黒川紀章設計の展望タワー最上階。地上103mから見下ろす門司港は、古地図の魔法陣と重なっている。',
+    enemies: ['風の魔術師', '鳥形の見張り番', '展望の幻影'],
+  },
+  {
+    id: 'tunnel',
+    name: '関門人道トンネル',
+    icon: '🕳️',
+    lat: 33.9479,
+    lng: 130.9682,
+    radius: 50,
+    level: 6,
+    theme: '地底の海底回廊',
+    desc: '海面下58mを歩いて渡れる全長780mのトンネル。歩くほどに、海の底の何かが近づいてくる…',
+    enemies: ['深海の滲み出るもの', 'トンネル壁の影', '圧力の悪魔'],
+  },
+];
+
+const ENTER_DISTANCE = 80; // m（この距離以内で解放）
+
+// ─── 状態 ─────────────────────────────────────────────────
+let playerLat = null, playerLng = null;
+let playerMarker = null;
+let demoMode = false;
+let selectedDungeon = null;
+
+// ─── Leaflet地図初期化 ────────────────────────────────────
+const map = L.map('map', {
+  center: [33.9430, 130.9630],
+  zoom: 16,
+  zoomControl: false,
+}).addLayer(
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  })
+);
+
+L.control.zoom({ position: 'topright' }).addTo(map);
+
+// ─── カスタムマーカー生成 ────────────────────────────────
+function makeDungeonIcon(d, nearby) {
+  return L.divIcon({
+    className: '',
+    html: `<div class="custom-marker">
+      <div class="marker-bubble ${nearby ? 'nearby-marker' : ''}">${d.icon}</div>
+      <div class="marker-label">${d.name}</div>
+    </div>`,
+    iconSize: [80, 50],
+    iconAnchor: [40, 50],
+  });
+}
+
+function makePlayerIcon() {
+  return L.divIcon({
+    className: '',
+    html: `<div class="player-marker-inner"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  });
+}
+
+// ─── マーカー配置 ─────────────────────────────────────────
+const dungeonMarkers = {};
+DUNGEONS.forEach(d => {
+  const m = L.marker([d.lat, d.lng], { icon: makeDungeonIcon(d, false) }).addTo(map);
+  m.on('click', () => openModal(d));
+  dungeonMarkers[d.id] = m;
+});
+
+// ─── 距離計算（ハーバーサイン） ───────────────────────────
+function calcDist(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ─── カード描画 ───────────────────────────────────────────
+function buildCards() {
+  const scroll = document.getElementById('dungeonScroll');
+  scroll.innerHTML = '';
+  DUNGEONS.forEach(d => {
+    const dist = (playerLat !== null)
+      ? Math.round(calcDist(playerLat, playerLng, d.lat, d.lng))
+      : null;
+    const nearby = dist !== null && dist <= ENTER_DISTANCE;
+    const card = document.createElement('div');
+    card.className = 'dungeon-card' + (nearby ? ' nearby' : '');
+    card.id = 'card-' + d.id;
+    card.innerHTML = `
+      <div class="card-icon">${d.icon}</div>
+      <div class="card-name">${d.name}</div>
+      <div class="card-status">
+        <div class="status-dot"></div>
+        <span class="status-text">${nearby ? '解放中' : 'ロック'}</span>
+      </div>
+      ${dist !== null ? `<div class="card-dist">${dist < 1000 ? dist+'m' : (dist/1000).toFixed(1)+'km'}</div>` : ''}
+      <button class="enter-btn" onclick="openModal(DUNGEONS.find(x=>x.id==='${d.id}'))">▶ 入る</button>
+    `;
+    card.addEventListener('click', () => openModal(d));
+    scroll.appendChild(card);
+  });
+}
+
+// ─── 近接判定・マーカー更新 ──────────────────────────────
+function updateNearby() {
+  if (playerLat === null) return;
+  DUNGEONS.forEach(d => {
+    const dist = calcDist(playerLat, playerLng, d.lat, d.lng);
+    const nearby = dist <= ENTER_DISTANCE;
+    dungeonMarkers[d.id].setIcon(makeDungeonIcon(d, nearby));
+  });
+  buildCards();
+}
+
+// ─── 自分位置更新 ────────────────────────────────────────
+function setPlayerPos(lat, lng) {
+  playerLat = lat; playerLng = lng;
+  if (!playerMarker) {
+    playerMarker = L.marker([lat, lng], { icon: makePlayerIcon(), zIndexOffset: 1000 }).addTo(map);
+  } else {
+    playerMarker.setLatLng([lat, lng]);
+  }
+  updateNearby();
+}
+
+// ─── GPS取得 ─────────────────────────────────────────────
+function startGPS() {
+  if (!navigator.geolocation) {
+    setDemoMode(); return;
+  }
+  navigator.geolocation.watchPosition(
+    pos => {
+      document.getElementById('gpsDot').className = 'gps-dot active';
+      document.getElementById('gpsLabel').textContent = 'GPS受信中';
+      setPlayerPos(pos.coords.latitude, pos.coords.longitude);
+    },
+    err => {
+      setDemoMode();
+    },
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 3000 }
+  );
+}
+
+function setDemoMode() {
+  demoMode = true;
+  document.getElementById('gpsDot').className = 'gps-dot';
+  document.getElementById('gpsLabel').textContent = 'デモモード';
+  document.getElementById('demoBar').style.display = 'flex';
+  // デモ用：門司港駅付近に仮配置
+  setPlayerPos(33.9425, 130.9618);
+  map.on('click', e => {
+    setPlayerPos(e.latlng.lat, e.latlng.lng);
+    map.panTo(e.latlng);
+  });
+}
+
+// ─── モーダル ────────────────────────────────────────────
+function openModal(d) {
+  selectedDungeon = d;
+  const dist = playerLat !== null
+    ? Math.round(calcDist(playerLat, playerLng, d.lat, d.lng))
+    : null;
+  const nearby = dist !== null && dist <= ENTER_DISTANCE;
+
+  document.getElementById('modalIcon').textContent = d.icon;
+  document.getElementById('modalTitle').textContent = d.name;
+  document.getElementById('modalSubtitle').textContent = `Lv.${d.level}　${d.theme}`;
+  document.getElementById('modalDesc').textContent = d.desc;
+
+  const eList = document.getElementById('enemyList');
+  eList.innerHTML = d.enemies.map(e => `<span class="enemy-tag">${e}</span>`).join('');
+
+  const btn = document.getElementById('enterBtn');
+  if (nearby) {
+    btn.textContent = '▶ ダンジョンへ突入';
+    btn.style.opacity = '1';
+    btn.disabled = false;
+    btn.onclick = () => alert(`「${d.name}」へ突入！\n（バトル画面は次のフェーズで実装します）`);
+  } else {
+    btn.textContent = dist !== null ? `🔒 あと約${dist}m` : '🔒 GPS未取得';
+    btn.style.opacity = '0.5';
+    btn.disabled = true;
+  }
+
+  document.getElementById('modalOverlay').classList.add('open');
+
+  // 地図をそのダンジョンに移動
+  map.panTo([d.lat, d.lng]);
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+// ─── 起動 ────────────────────────────────────────────────
+buildCards();
+startGPS();
+</script>
+</body>
+</html>
