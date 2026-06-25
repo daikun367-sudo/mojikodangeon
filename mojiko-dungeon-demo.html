@@ -7,392 +7,130 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Cinzel:wght@700&display=swap');
-
-  :root {
-    --bg:       #0d0d14;
-    --panel:    #13131f;
-    --border:   #2a2a42;
-    --gold:     #c8a84b;
-    --gold-dim: #7a6330;
-    --red:      #e05050;
-    --cyan:     #4ecdc4;
-    --text:     #d4cfc8;
-    --text-dim: #7a7870;
-    --locked:   #3a3a50;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Noto Sans JP', sans-serif;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* ── ヘッダー ── */
-  header {
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-  }
-
-  .title-block {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .title-en {
-    font-family: 'Cinzel', serif;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    color: var(--gold-dim);
-  }
-
-  .title-ja {
-    font-size: 16px;
-    font-weight: 900;
-    color: var(--gold);
-    letter-spacing: 0.05em;
-  }
-
-  .gps-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--text-dim);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 10px;
-  }
-
-  .gps-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--text-dim);
-    transition: background 0.3s;
-  }
-  .gps-dot.active { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
-  .gps-dot.error  { background: var(--red); }
-
-  /* ── メインレイアウト ── */
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* ── 地図 ── */
-  #map {
-    flex: 1;
-    min-height: 0;
-    z-index: 1;
-  }
-
-  /* Leafletのアトリビューションを小さく */
-  .leaflet-control-attribution { font-size: 9px !important; }
-
-  /* ── 下パネル ── */
-  .bottom-panel {
-    background: var(--panel);
-    border-top: 1px solid var(--border);
-    padding: 12px 16px;
-    flex-shrink: 0;
-    z-index: 10;
-  }
-
-  .panel-label {
-    font-size: 10px;
-    color: var(--gold-dim);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  /* ダンジョンカード横スクロール */
-  .dungeon-scroll {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: none;
-  }
-  .dungeon-scroll::-webkit-scrollbar { display: none; }
-
-  .dungeon-card {
-    flex-shrink: 0;
-    width: 130px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px;
-    cursor: pointer;
-    transition: border-color 0.2s, transform 0.15s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .dungeon-card.nearby {
-    border-color: var(--gold);
-  }
-
-  .dungeon-card.nearby::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(200,168,75,0.08) 0%, transparent 60%);
-    pointer-events: none;
-  }
-
-  .dungeon-card:active { transform: scale(0.97); }
-
-  .card-icon { font-size: 22px; margin-bottom: 4px; }
-
-  .card-name {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.3;
-    margin-bottom: 4px;
-  }
-
-  .card-status {
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .status-dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--locked);
-  }
-
-  .dungeon-card.nearby .status-dot { background: var(--gold); }
-
-  .status-text { color: var(--text-dim); }
-  .dungeon-card.nearby .status-text { color: var(--gold); }
-
-  .card-dist {
-    font-size: 10px;
-    color: var(--text-dim);
-    margin-top: 4px;
-  }
-
-  /* 解放ボタン */
-  .enter-btn {
-    display: none;
-    margin-top: 8px;
-    width: 100%;
-    background: var(--gold);
-    color: #0d0d14;
-    border: none;
-    border-radius: 4px;
-    padding: 5px 0;
-    font-size: 11px;
-    font-weight: 700;
-    font-family: 'Noto Sans JP', sans-serif;
-    cursor: pointer;
-    letter-spacing: 0.05em;
-  }
-  .dungeon-card.nearby .enter-btn { display: block; }
-
-  /* ── GPSなしデモモード ── */
-  .demo-bar {
-    background: rgba(78,205,196,0.1);
-    border-top: 1px solid rgba(78,205,196,0.3);
-    padding: 6px 16px;
-    font-size: 11px;
-    color: var(--cyan);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-
-  /* ── モーダル ── */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.75);
-    z-index: 100;
-    align-items: flex-end;
-    justify-content: center;
-  }
-  .modal-overlay.open { display: flex; }
-
-  .modal {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-bottom: none;
-    border-radius: 16px 16px 0 0;
-    width: 100%;
-    max-width: 480px;
-    padding: 24px 20px 32px;
-    animation: slideUp 0.25s ease;
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(40px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
-
-  .modal-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
-  .modal-icon { font-size: 36px; }
-
-  .modal-title {
-    font-size: 18px;
-    font-weight: 900;
-    color: var(--gold);
-    line-height: 1.2;
-  }
-
-  .modal-subtitle {
-    font-size: 11px;
-    color: var(--text-dim);
-    margin-top: 2px;
-  }
-
-  .modal-desc {
-    font-size: 13px;
-    color: var(--text);
-    line-height: 1.7;
-    margin-bottom: 16px;
-    border-left: 2px solid var(--gold-dim);
-    padding-left: 10px;
-  }
-
-  .modal-enemies {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 12px;
-    margin-bottom: 16px;
-  }
-
-  .enemies-label {
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 0.1em;
-    margin-bottom: 6px;
-  }
-
-  .enemy-list {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .enemy-tag {
-    font-size: 11px;
-    background: var(--border);
-    border-radius: 4px;
-    padding: 3px 8px;
-    color: var(--text);
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .btn-enter {
-    flex: 1;
-    background: var(--gold);
-    color: #0d0d14;
-    border: none;
-    border-radius: 6px;
-    padding: 12px;
-    font-size: 14px;
-    font-weight: 700;
-    font-family: 'Noto Sans JP', sans-serif;
-    cursor: pointer;
-    letter-spacing: 0.05em;
-  }
-
-  .btn-close {
-    background: var(--bg);
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px 16px;
-    font-size: 14px;
-    font-family: 'Noto Sans JP', sans-serif;
-    cursor: pointer;
-  }
-
-  /* カスタムマーカー */
-  .custom-marker {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-  }
-  .marker-bubble {
-    background: var(--panel);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    padding: 4px 8px;
-    font-size: 18px;
-    line-height: 1;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    transition: border-color 0.3s;
-  }
-  .marker-bubble.nearby-marker {
-    border-color: var(--gold);
-    box-shadow: 0 0 10px rgba(200,168,75,0.4);
-  }
-  .marker-label {
-    font-size: 9px;
-    font-weight: 700;
-    color: var(--text);
-    background: rgba(13,13,20,0.85);
-    border-radius: 3px;
-    padding: 1px 4px;
-    margin-top: 2px;
-    white-space: nowrap;
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* 自分マーカー */
-  .player-marker-inner {
-    width: 14px; height: 14px;
-    background: var(--cyan);
-    border: 2px solid white;
-    border-radius: 50%;
-    box-shadow: 0 0 10px var(--cyan);
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%,100% { box-shadow: 0 0 6px var(--cyan); }
-    50%      { box-shadow: 0 0 16px var(--cyan); }
-  }
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Cinzel:wght@700&display=swap');
+:root{--bg:#0d0d14;--panel:#13131f;--border:#2a2a42;--gold:#c8a84b;--gold-dim:#7a6330;--red:#e05050;--cyan:#4ecdc4;--green:#4ecda0;--text:#d4cfc8;--text-dim:#7a7870;--locked:#3a3a50}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.title-block{display:flex;flex-direction:column}
+.title-en{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.2em;color:var(--gold-dim)}
+.title-ja{font-size:16px;font-weight:900;color:var(--gold)}
+.gps-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 10px}
+.gps-dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);transition:background .3s}
+.gps-dot.active{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+#map{flex:1;min-height:0;z-index:1}
+.leaflet-control-attribution{font-size:9px !important}
+.bottom-panel{background:var(--panel);border-top:1px solid var(--border);padding:12px 16px;flex-shrink:0;z-index:10}
+.panel-label{font-size:10px;color:var(--gold-dim);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px}
+.dungeon-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.dungeon-scroll::-webkit-scrollbar{display:none}
+.dungeon-card{flex-shrink:0;width:130px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;cursor:pointer;transition:border-color .2s,transform .15s;position:relative;overflow:hidden}
+.dungeon-card.nearby{border-color:var(--gold)}
+.dungeon-card.nearby::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(200,168,75,.08) 0%,transparent 60%);pointer-events:none}
+.dungeon-card.cleared{border-color:var(--green);opacity:.7}
+.dungeon-card:active{transform:scale(.97)}
+.card-icon{font-size:22px;margin-bottom:4px}
+.card-name{font-size:11px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px}
+.card-status{font-size:10px;display:flex;align-items:center;gap:4px}
+.status-dot{width:5px;height:5px;border-radius:50%;background:var(--locked)}
+.dungeon-card.nearby .status-dot{background:var(--gold)}
+.dungeon-card.cleared .status-dot{background:var(--green)}
+.status-text{color:var(--text-dim)}
+.dungeon-card.nearby .status-text{color:var(--gold)}
+.dungeon-card.cleared .status-text{color:var(--green)}
+.card-dist{font-size:10px;color:var(--text-dim);margin-top:4px}
+.enter-btn{display:none;margin-top:8px;width:100%;background:var(--gold);color:#0d0d14;border:none;border-radius:4px;padding:5px 0;font-size:11px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+.dungeon-card.nearby .enter-btn{display:block}
+.demo-bar{background:rgba(78,205,196,.1);border-top:1px solid rgba(78,205,196,.3);padding:6px 16px;font-size:11px;color:var(--cyan);display:flex;align-items:center;gap:6px;flex-shrink:0}
+/* 全画面 */
+.screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;flex-direction:column;overflow:hidden}
+.screen.open{display:flex}
+.dungeon-header{background:var(--panel);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.back-btn{background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:6px 10px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+.dungeon-header-title{font-size:15px;font-weight:900;color:var(--gold)}
+.dungeon-header-sub{font-size:11px;color:var(--text-dim)}
+.explore-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+/* 進捗 */
+.progress-row{display:flex;align-items:center;gap:8px}
+.progress-label{font-size:11px;color:var(--text-dim);white-space:nowrap}
+.progress-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .4s}
+/* 問題カード */
+.quiz-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.quiz-card.solved{border-color:var(--green)}
+.quiz-card-header{display:flex;align-items:center;gap:10px}
+.quiz-num{font-size:11px;color:var(--gold-dim);font-weight:700;letter-spacing:.1em}
+.quiz-card-title{font-size:13px;font-weight:700;color:var(--text)}
+.quiz-solved-badge{font-size:11px;color:var(--green);margin-left:auto}
+/* 入力エリア */
+.answer-row{display:flex;gap:8px}
+.answer-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:14px;color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color .2s}
+.answer-input:focus{border-color:var(--gold)}
+.answer-input.correct{border-color:var(--green);background:rgba(78,205,160,.07)}
+.answer-input.wrong{border-color:var(--red);background:rgba(224,80,80,.07)}
+.submit-btn{background:var(--gold);color:#0d0d14;border:none;border-radius:6px;padding:10px 14px;font-size:13px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;white-space:nowrap}
+.submit-btn:disabled{opacity:.4;cursor:default}
+.answer-feedback{font-size:12px;padding:6px 10px;border-radius:6px;text-align:center}
+.answer-feedback.ok{background:rgba(78,205,160,.15);color:var(--green)}
+.answer-feedback.ng{background:rgba(224,80,80,.15);color:var(--red)}
+/* ボス解放 */
+.boss-banner{background:linear-gradient(135deg,#2a1a1a,#1a0d0d);border:1px solid var(--red);border-radius:10px;padding:16px;text-align:center;cursor:pointer;animation:glowRed 2s ease-in-out infinite}
+@keyframes glowRed{0%,100%{box-shadow:0 0 8px rgba(224,80,80,.3)}50%{box-shadow:0 0 20px rgba(224,80,80,.6)}}
+.boss-banner-title{font-size:18px;font-weight:900;color:var(--red);margin-bottom:4px}
+.boss-banner-sub{font-size:12px;color:var(--text-dim)}
+/* ボス戦 */
+.boss-screen{background:radial-gradient(ellipse at top,#1a0a0a,var(--bg))}
+.boss-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:16px}
+.boss-emoji{font-size:72px;animation:bossFloat 3s ease-in-out infinite}
+@keyframes bossFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.boss-name{font-size:22px;font-weight:900;color:var(--red)}
+.boss-hp-wrap,.player-hp-wrap{width:100%;max-width:300px}
+.boss-hp-label,.player-hp-label{font-size:11px;color:var(--text-dim);margin-bottom:4px;display:flex;justify-content:space-between}
+.boss-hp-bar{height:14px;background:var(--border);border-radius:7px;overflow:hidden}
+.boss-hp-fill{height:100%;background:linear-gradient(90deg,#e05050,#ff8080);border-radius:7px;transition:width .5s}
+.player-hp-bar{height:10px;background:var(--border);border-radius:5px;overflow:hidden}
+.player-hp-fill{height:100%;background:linear-gradient(90deg,var(--cyan),#80ffe8);border-radius:5px;transition:width .5s}
+.battle-log{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;width:100%;max-width:300px;font-size:13px;color:var(--text);line-height:1.6;min-height:60px;white-space:pre-line}
+.boss-actions{display:flex;gap:10px;width:100%;max-width:300px}
+.attack-btn{flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:14px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+.attack-btn:disabled{opacity:.4;cursor:default}
+.skill-btn{flex:1;background:var(--gold);color:#0d0d14;border:none;border-radius:8px;padding:14px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+.skill-btn:disabled{opacity:.4;cursor:default}
+/* クリア */
+.clear-screen{background:radial-gradient(ellipse at center,#1a1a0a,var(--bg));align-items:center;justify-content:center;flex-direction:column;gap:16px;text-align:center;padding:30px}
+.clear-title{font-size:32px;font-weight:900;color:var(--gold)}
+.clear-sub{font-size:14px;color:var(--text-dim);line-height:1.7;white-space:pre-line}
+.clear-back{background:var(--gold);color:#0d0d14;border:none;border-radius:8px;padding:14px 32px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:8px}
+/* 地図モーダル */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border);border-bottom:none;border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.modal-icon{font-size:36px}
+.modal-title{font-size:18px;font-weight:900;color:var(--gold);line-height:1.2}
+.modal-subtitle{font-size:11px;color:var(--text-dim);margin-top:2px}
+.modal-desc{font-size:13px;color:var(--text);line-height:1.7;margin-bottom:16px;border-left:2px solid var(--gold-dim);padding-left:10px}
+.modal-enemies{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:16px}
+.enemies-label{font-size:10px;color:var(--text-dim);letter-spacing:.1em;margin-bottom:6px}
+.enemy-list{display:flex;gap:8px;flex-wrap:wrap}
+.enemy-tag{font-size:11px;background:var(--border);border-radius:4px;padding:3px 8px;color:var(--text)}
+.modal-actions{display:flex;gap:8px}
+.btn-enter{flex:1;background:var(--gold);color:#0d0d14;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+.btn-enter:disabled{opacity:.5;cursor:default}
+.btn-close{background:var(--bg);color:var(--text-dim);border:1px solid var(--border);border-radius:6px;padding:12px 16px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+/* マーカー */
+.custom-marker{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.marker-bubble{background:var(--panel);border:2px solid var(--border);border-radius:8px;padding:4px 8px;font-size:18px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.marker-bubble.nearby-marker{border-color:var(--gold);box-shadow:0 0 10px rgba(200,168,75,.4)}
+.marker-bubble.cleared-marker{border-color:var(--green)}
+.marker-label{font-size:9px;font-weight:700;color:var(--text);background:rgba(13,13,20,.85);border-radius:3px;padding:1px 4px;margin-top:2px;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+.player-marker-inner{width:14px;height:14px;background:var(--cyan);border:2px solid white;border-radius:50%;box-shadow:0 0 10px var(--cyan);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 6px var(--cyan)}50%{box-shadow:0 0 16px var(--cyan)}}
 </style>
 </head>
 <body>
-
 <header>
   <div class="title-block">
     <span class="title-en">MOJIKO DUNGEON RPG</span>
@@ -403,302 +141,467 @@
     <span id="gpsLabel">GPS待機中</span>
   </div>
 </header>
-
 <main>
   <div id="map"></div>
-
-  <div class="demo-bar" id="demoBar" style="display:none">
-    📍 デモモード：地図をタップして位置をシミュレート
-  </div>
-
+  <div class="demo-bar" id="demoBar" style="display:none">📍 デモモード：地図をタップして位置をシミュレート</div>
   <div class="bottom-panel">
     <div class="panel-label">▸ ダンジョン一覧</div>
     <div class="dungeon-scroll" id="dungeonScroll"></div>
   </div>
 </main>
 
-<!-- モーダル -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal" id="modal">
+<!-- 地図モーダル -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeMapModal(event)">
+  <div class="modal">
     <div class="modal-header">
       <div class="modal-icon" id="modalIcon"></div>
-      <div>
-        <div class="modal-title" id="modalTitle"></div>
-        <div class="modal-subtitle" id="modalSubtitle"></div>
-      </div>
+      <div><div class="modal-title" id="modalTitle"></div><div class="modal-subtitle" id="modalSubtitle"></div></div>
     </div>
     <div class="modal-desc" id="modalDesc"></div>
-    <div class="modal-enemies">
-      <div class="enemies-label">出現する敵</div>
-      <div class="enemy-list" id="enemyList"></div>
-    </div>
+    <div class="modal-enemies"><div class="enemies-label">出現する敵</div><div class="enemy-list" id="enemyList"></div></div>
     <div class="modal-actions">
       <button class="btn-close" onclick="document.getElementById('modalOverlay').classList.remove('open')">閉じる</button>
-      <button class="btn-enter" id="enterBtn">ダンジョンへ</button>
+      <button class="btn-enter" id="enterBtn">▶ 突入する</button>
     </div>
   </div>
 </div>
 
+<!-- 探索・回答画面 -->
+<div class="screen" id="exploreScreen">
+  <div class="dungeon-header">
+    <button class="back-btn" onclick="leaveExplore()">← 戻る</button>
+    <div><div class="dungeon-header-title" id="expTitle"></div><div class="dungeon-header-sub" id="expSub"></div></div>
+  </div>
+  <div class="explore-body" id="exploreBody"></div>
+</div>
+
+<!-- ボス戦 -->
+<div class="screen boss-screen" id="bossScreen">
+  <div class="dungeon-header">
+    <div style="width:60px"></div>
+    <div style="flex:1;text-align:center"><div class="dungeon-header-title" id="bossAreaName"></div></div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="boss-area">
+    <div class="boss-emoji" id="bossEmoji"></div>
+    <div class="boss-name" id="bossName"></div>
+    <div class="boss-hp-wrap">
+      <div class="boss-hp-label"><span>BOSS HP</span><span id="bossHpNum"></span></div>
+      <div class="boss-hp-bar"><div class="boss-hp-fill" id="bossHpFill"></div></div>
+    </div>
+    <div class="player-hp-wrap">
+      <div class="player-hp-label"><span>自分 HP</span><span id="playerHpNum"></span></div>
+      <div class="player-hp-bar"><div class="player-hp-fill" id="playerHpFill"></div></div>
+    </div>
+    <div class="battle-log" id="battleLog"></div>
+    <div class="boss-actions">
+      <button class="attack-btn" id="attackBtn" onclick="doAttack()">⚔️ 攻撃</button>
+      <button class="skill-btn" id="skillBtn" onclick="doSkill()">✨ 必殺技</button>
+    </div>
+  </div>
+</div>
+
+<!-- クリア -->
+<div class="screen clear-screen" id="clearScreen">
+  <div style="font-size:64px">🏆</div>
+  <div class="clear-title" id="clearTitle"></div>
+  <div class="clear-sub" id="clearSub"></div>
+  <button class="clear-back" onclick="backToMap()">地図へ戻る</button>
+</div>
+
 <script>
-// ─── データ ───────────────────────────────────────────────
+// ══ データ ══════════════════════════════════════════
+// answers: 正解とみなす文字列リスト（表記ゆれ対応）
 const DUNGEONS = [
   {
-    id: 'station',
-    name: '門司港駅',
-    icon: '🏛️',
-    lat: 33.9425,
-    lng: 130.9618,
-    radius: 80,
-    level: 1,
-    theme: '蒸気と記憶の迷宮',
-    desc: '大正3年創建、九州初の鉄道発祥の地。改札の向こうに広がるのは、蒸気が充満した時間の迷宮だ。',
-    enemies: ['蒸気機関士の亡霊', '錆びた改札鬼', 'SLの魂'],
+    id:'station', name:'門司港駅', icon:'🏛️', lat:33.9425, lng:130.9618, level:1,
+    theme:'蒸気と記憶の迷宮',
+    desc:'大正3年創建、九州初の鉄道発祥の地。改札の向こうに広がるのは蒸気が充満した時間の迷宮だ。',
+    enemies:['蒸気機関士の亡霊','錆びた改札鬼','SLの魂'],
+    boss:{emoji:'🚂', name:'大怨霊・鉄道王', hp:60, atk:12},
+    quizzes:[
+      {id:'s1', label:'問題①', answers:['1914','1914年']},
+      {id:'s2', label:'問題②', answers:['ローマ数字','ローマすうじ']},
+      {id:'s3', label:'問題③', answers:['行き止まり','いきどまり','止まっている','とまっている']},
+    ]
   },
   {
-    id: 'osaka',
-    name: '旧大阪商船',
-    icon: '⚓',
-    lat: 33.9431,
-    lng: 130.9634,
-    radius: 60,
-    level: 2,
-    theme: '海商の呪われた船室',
-    desc: '八角形の塔を持つ大正6年の洋館。かつて荷物番号札が飛び交ったこの場所に、貿易商の怨念が漂う。',
-    enemies: ['怨念の船荷番', '港の亡霊商人', '暗礁の守護者'],
+    id:'railway', name:'九州鉄道記念館', icon:'🚂', lat:33.9421, lng:130.9610, level:1,
+    theme:'赤レンガの蒸気遺産',
+    desc:'明治24年建造の旧九州鉄道本社。赤レンガの重厚な建物に九州の鉄道の歴史が詰まっている。',
+    enemies:['明治の機関士','ヘッドマークの幽霊','ゼロマイルの番人'],
+    boss:{emoji:'🔴', name:'赤レンガの守護神', hp:60, atk:12},
+    quizzes:[
+      {id:'r1', label:'問題①', answers:['1891','1891年']},
+      {id:'r2', label:'問題②', answers:['赤','赤レンガ','あか','赤色']},
+      {id:'r3', label:'問題③', answers:['ゼロマイルひょうしき','0マイル標識','ゼロマイル標識','ぜろまいるひょうしき']},
+    ]
   },
   {
-    id: 'mitsui',
-    name: '旧門司三井倶楽部',
-    icon: '🏚️',
-    lat: 33.9419,
-    lng: 130.9621,
-    radius: 70,
-    level: 3,
-    theme: 'アインシュタインの亡霊館',
-    desc: '1921年にアインシュタインが宿泊した洋館。木造の廊下には今も学者の残留思念が刻まれている。',
-    enemies: ['量子の幽霊', '相対性の番人', '時空の歪み'],
+    id:'osaka', name:'旧大阪商船', icon:'⚓', lat:33.9431, lng:130.9634, level:2,
+    theme:'海商の呪われた船室',
+    desc:'八角形の塔を持つ大正6年の洋館。かつて荷物番号札が飛び交ったこの場所に、貿易商の怨念が漂う。',
+    enemies:['怨念の船荷番','港の亡霊商人','暗礁の守護者'],
+    boss:{emoji:'🐙', name:'深海の大貿易魔', hp:80, atk:15},
+    quizzes:[
+      {id:'o1', label:'問題①', answers:['1917','1917年']},
+      {id:'o2', label:'問題②', answers:['八角形','はっかくけい','8角形','8']},
+      {id:'o3', label:'問題③', answers:['オレンジ','オレンジ色','オレンジいろ','だいだい','橙']},
+    ]
   },
   {
-    id: 'bridge',
-    name: '関門橋',
-    icon: '🌉',
-    lat: 33.9463,
-    lng: 130.9702,
-    radius: 100,
-    level: 5,
-    theme: '海峡の巨神殿',
-    desc: '本州と九州を結ぶ全長1068mの橋。橋脚深くに眠る海峡の神が、挑む者を試す。',
-    enemies: ['関門海峡の竜', '潮流の精霊', '橋守の巨人'],
+    id:'mitsui', name:'旧門司三井倶楽部', icon:'🏚️', lat:33.9419, lng:130.9621, level:2,
+    theme:'アインシュタインの亡霊館',
+    desc:'1921年建造の洋館。あのアインシュタインが宿泊した部屋が今も残っている。',
+    enemies:['量子の幽霊','相対性の番人','時空の歪み'],
+    boss:{emoji:'👓', name:'怨霊博士アインシュタイン', hp:80, atk:15},
+    quizzes:[
+      {id:'m1', label:'問題①', answers:['1921','1921年']},
+      {id:'m2', label:'問題②', answers:['1922','1922年']},
+      {id:'m3', label:'問題③', answers:['重要文化財','じゅうようぶんかざい','国の重要文化財']},
+    ]
   },
   {
-    id: 'retro',
-    name: '門司港レトロ展望室',
-    icon: '🗼',
-    lat: 33.9414,
-    lng: 130.9628,
-    radius: 60,
-    level: 4,
-    theme: '高みの魔法陣',
-    desc: '黒川紀章設計の展望タワー最上階。地上103mから見下ろす門司港は、古地図の魔法陣と重なっている。',
-    enemies: ['風の魔術師', '鳥形の見張り番', '展望の幻影'],
+    id:'customs', name:'旧門司税関', icon:'🧱', lat:33.9427, lng:130.9638, level:2,
+    theme:'赤煉瓦の監視迷宮',
+    desc:'明治45年建造の赤煉瓦の庁舎。輸出入の荷物を厳しく監視した税関の怨念が宿る。',
+    enemies:['税関の亡霊番人','密輸の怨霊','赤レンガの守衛'],
+    boss:{emoji:'🧱', name:'明治の大税関鬼', hp:80, atk:15},
+    quizzes:[
+      {id:'c1', label:'問題①', answers:['1912','1912年']},
+      {id:'c2', label:'問題②', answers:['赤レンガ','赤','あか','赤色']},
+      {id:'c3', label:'問題③', answers:['輸出入','ゆしゅつにゅう','輸出入の荷物をチェックする','関税','かんぜい']},
+    ]
   },
   {
-    id: 'tunnel',
-    name: '関門人道トンネル',
-    icon: '🕳️',
-    lat: 33.9479,
-    lng: 130.9682,
-    radius: 50,
-    level: 6,
-    theme: '地底の海底回廊',
-    desc: '海面下58mを歩いて渡れる全長780mのトンネル。歩くほどに、海の底の何かが近づいてくる…',
-    enemies: ['深海の滲み出るもの', 'トンネル壁の影', '圧力の悪魔'],
+    id:'bluewing', name:'ブルーウィングもじ', icon:'🌉', lat:33.9428, lng:130.9625, level:3,
+    theme:'跳ね橋の試練',
+    desc:'1993年完成の歩行者専用はね橋。全長108m、1日6回跳ね上がる青い橋に眠る試練。',
+    enemies:['橋守の精霊','海風の怪','跳ね橋の番人'],
+    boss:{emoji:'🔵', name:'海峡の跳ね橋魔', hp:100, atk:16},
+    quizzes:[
+      {id:'b1', label:'問題①', answers:['1993','1993年']},
+      {id:'b2', label:'問題②', answers:['108','108m','108メートル']},
+      {id:'b3', label:'問題③', answers:['6','6回','ろっかい']},
+    ]
+  },
+  {
+    id:'sakae', name:'栄町銀天街', icon:'🏬', lat:33.9408, lng:130.9598, level:3,
+    theme:'昭和商店街の幻',
+    desc:'門司港の庶民の台所として長く親しまれてきたアーケード商店街。昭和の賑わいが幻となって漂う。',
+    enemies:['昭和の呼び込み霊','アーケードの影','看板の怨念'],
+    boss:{emoji:'🏮', name:'昭和の大店主霊', hp:100, atk:16},
+    quizzes:[
+      {id:'sk1', label:'問題①', answers:['雨でもぬれない','ぬれない','雨','あめ','屋根がある']},
+      {id:'sk2', label:'問題②', answers:['銀天街','ぎんてんがい','GINTENGAI']},
+      {id:'sk3', label:'問題③', answers:['自由回答']}, // 自由回答は常に正解扱い
+    ]
+  },
+  {
+    id:'museum', name:'関門海峡ミュージアム', icon:'🎡', lat:33.9418, lng:130.9645, level:4,
+    theme:'海峡の記憶殿',
+    desc:'2003年開館。関門海峡をテーマにした屋内型観光施設。海峡の歴史と謎が封印されている。',
+    enemies:['海峡の幻影','潮流の精霊','海底の守護者'],
+    boss:{emoji:'🌊', name:'関門海峡の大海神', hp:100, atk:18},
+    quizzes:[
+      {id:'mu1', label:'問題①', answers:['2003','2003年']},
+      {id:'mu2', label:'問題②', answers:['関門海峡','かんもんかいきょう']},
+      {id:'mu3', label:'問題③', answers:['福岡県と山口県','山口県と福岡県','ふくおかとやまぐち','福岡と山口']},
+    ]
+  },
+  {
+    id:'hotel', name:'門司港ホテル', icon:'🏨', lat:33.9415, lng:130.9632, level:4,
+    theme:'イタリア建築の亡霊宮殿',
+    desc:'1998年建造。イタリアの巨匠アルド・ロッシの遺作。白亜の建物に宮殿の亡霊が眠る。',
+    enemies:['建築家の亡霊','白亜の守衛','宮殿の幻影'],
+    boss:{emoji:'🏰', name:'建築の大亡霊ロッシ', hp:100, atk:18},
+    quizzes:[
+      {id:'h1', label:'問題①', answers:['1998','1998年']},
+      {id:'h2', label:'問題②', answers:['アルド・ロッシ','アルドロッシ','aldo rossi']},
+      {id:'h3', label:'問題③', answers:['白','しろ','白色','クリーム色','クリーム']},
+    ]
+  },
+  {
+    id:'retro', name:'レトロ展望室', icon:'🗼', lat:33.9414, lng:130.9628, level:5,
+    theme:'高みの魔法陣',
+    desc:'1999年建造、黒川紀章設計。地上103mから見下ろす門司港は古地図の魔法陣と重なっている。',
+    enemies:['風の魔術師','鳥形の見張り番','展望の幻影'],
+    boss:{emoji:'🌀', name:'天空の魔法陣守護者', hp:120, atk:20},
+    quizzes:[
+      {id:'t1', label:'問題①', answers:['1999','1999年']},
+      {id:'t2', label:'問題②', answers:['103','103m','103メートル']},
+      {id:'t3', label:'問題③', answers:['山口県','やまぐちけん','山口']},
+    ]
   },
 ];
 
-const ENTER_DISTANCE = 80; // m（この距離以内で解放）
+const ENTER_DIST = 80;
+let playerLat=null, playerLng=null, playerMarker=null;
+let cleared={};
+let currentDungeon=null;
+let solvedQuizzes={}; // {quizId: true}
+let bossHp=0, bossMaxHp=0, playerHp=100, playerMaxHp=100;
+let battleLock=false;
 
-// ─── 状態 ─────────────────────────────────────────────────
-let playerLat = null, playerLng = null;
-let playerMarker = null;
-let demoMode = false;
-let selectedDungeon = null;
+// ══ 地図 ══════════════════════════════════════════
+const map = L.map('map',{center:[33.9425,130.9625],zoom:16,zoomControl:false})
+  .addLayer(L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; OpenStreetMap contributors', maxZoom:19}));
+L.control.zoom({position:'topright'}).addTo(map);
 
-// ─── Leaflet地図初期化 ────────────────────────────────────
-const map = L.map('map', {
-  center: [33.9430, 130.9630],
-  zoom: 16,
-  zoomControl: false,
-}).addLayer(
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
-  })
-);
-
-L.control.zoom({ position: 'topright' }).addTo(map);
-
-// ─── カスタムマーカー生成 ────────────────────────────────
-function makeDungeonIcon(d, nearby) {
-  return L.divIcon({
-    className: '',
-    html: `<div class="custom-marker">
-      <div class="marker-bubble ${nearby ? 'nearby-marker' : ''}">${d.icon}</div>
-      <div class="marker-label">${d.name}</div>
-    </div>`,
-    iconSize: [80, 50],
-    iconAnchor: [40, 50],
-  });
+function makeDungeonIcon(d){
+  const nearby=isNearby(d);
+  const cls=cleared[d.id]?'cleared-marker':nearby?'nearby-marker':'';
+  return L.divIcon({className:'',
+    html:`<div class="custom-marker"><div class="marker-bubble ${cls}">${d.icon}</div><div class="marker-label">${d.name}</div></div>`,
+    iconSize:[80,50],iconAnchor:[40,50]});
+}
+function makePlayerIcon(){
+  return L.divIcon({className:'',html:`<div class="player-marker-inner"></div>`,iconSize:[14,14],iconAnchor:[7,7]});
 }
 
-function makePlayerIcon() {
-  return L.divIcon({
-    className: '',
-    html: `<div class="player-marker-inner"></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  });
-}
-
-// ─── マーカー配置 ─────────────────────────────────────────
-const dungeonMarkers = {};
-DUNGEONS.forEach(d => {
-  const m = L.marker([d.lat, d.lng], { icon: makeDungeonIcon(d, false) }).addTo(map);
-  m.on('click', () => openModal(d));
-  dungeonMarkers[d.id] = m;
+const dungeonMarkers={};
+DUNGEONS.forEach(d=>{
+  const m=L.marker([d.lat,d.lng],{icon:makeDungeonIcon(d)}).addTo(map);
+  m.on('click',()=>openMapModal(d));
+  dungeonMarkers[d.id]=m;
 });
 
-// ─── 距離計算（ハーバーサイン） ───────────────────────────
-function calcDist(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 +
-            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+// ══ 距離・近接 ════════════════════════════════════
+function calcDist(la1,ln1,la2,ln2){
+  const R=6371000,dL=(la2-la1)*Math.PI/180,dN=(ln2-ln1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dN/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
+function isNearby(d){return playerLat!==null&&calcDist(playerLat,playerLng,d.lat,d.lng)<=ENTER_DIST;}
+function getDist(d){return playerLat===null?null:Math.round(calcDist(playerLat,playerLng,d.lat,d.lng));}
 
-// ─── カード描画 ───────────────────────────────────────────
-function buildCards() {
-  const scroll = document.getElementById('dungeonScroll');
-  scroll.innerHTML = '';
-  DUNGEONS.forEach(d => {
-    const dist = (playerLat !== null)
-      ? Math.round(calcDist(playerLat, playerLng, d.lat, d.lng))
-      : null;
-    const nearby = dist !== null && dist <= ENTER_DISTANCE;
-    const card = document.createElement('div');
-    card.className = 'dungeon-card' + (nearby ? ' nearby' : '');
-    card.id = 'card-' + d.id;
-    card.innerHTML = `
-      <div class="card-icon">${d.icon}</div>
+// ══ カード描画 ════════════════════════════════════
+function buildCards(){
+  const s=document.getElementById('dungeonScroll');s.innerHTML='';
+  DUNGEONS.forEach(d=>{
+    const dist=getDist(d),nearby=isNearby(d),isCleared=cleared[d.id];
+    let cls='dungeon-card'+(isCleared?' cleared':nearby?' nearby':'');
+    const card=document.createElement('div');card.className=cls;
+    card.innerHTML=`<div class="card-icon">${d.icon}</div>
       <div class="card-name">${d.name}</div>
-      <div class="card-status">
-        <div class="status-dot"></div>
-        <span class="status-text">${nearby ? '解放中' : 'ロック'}</span>
-      </div>
-      ${dist !== null ? `<div class="card-dist">${dist < 1000 ? dist+'m' : (dist/1000).toFixed(1)+'km'}</div>` : ''}
-      <button class="enter-btn" onclick="openModal(DUNGEONS.find(x=>x.id==='${d.id}'))">▶ 入る</button>
-    `;
-    card.addEventListener('click', () => openModal(d));
-    scroll.appendChild(card);
+      <div class="card-status"><div class="status-dot"></div>
+        <span class="status-text">${isCleared?'クリア済':nearby?'解放中':'ロック'}</span></div>
+      ${dist!==null?`<div class="card-dist">${dist<1000?dist+'m':(dist/1000).toFixed(1)+'km'}</div>`:''}
+      ${nearby&&!isCleared?'<button class="enter-btn">▶ 入る</button>':''}`;
+    card.addEventListener('click',()=>openMapModal(d));
+    s.appendChild(card);
   });
 }
+function updateMarkers(){DUNGEONS.forEach(d=>dungeonMarkers[d.id].setIcon(makeDungeonIcon(d)));}
 
-// ─── 近接判定・マーカー更新 ──────────────────────────────
-function updateNearby() {
-  if (playerLat === null) return;
-  DUNGEONS.forEach(d => {
-    const dist = calcDist(playerLat, playerLng, d.lat, d.lng);
-    const nearby = dist <= ENTER_DISTANCE;
-    dungeonMarkers[d.id].setIcon(makeDungeonIcon(d, nearby));
-  });
-  buildCards();
+// ══ GPS ══════════════════════════════════════════
+function setPlayerPos(lat,lng){
+  playerLat=lat;playerLng=lng;
+  if(!playerMarker)playerMarker=L.marker([lat,lng],{icon:makePlayerIcon(),zIndexOffset:1000}).addTo(map);
+  else playerMarker.setLatLng([lat,lng]);
+  updateMarkers();buildCards();
 }
-
-// ─── 自分位置更新 ────────────────────────────────────────
-function setPlayerPos(lat, lng) {
-  playerLat = lat; playerLng = lng;
-  if (!playerMarker) {
-    playerMarker = L.marker([lat, lng], { icon: makePlayerIcon(), zIndexOffset: 1000 }).addTo(map);
-  } else {
-    playerMarker.setLatLng([lat, lng]);
-  }
-  updateNearby();
-}
-
-// ─── GPS取得 ─────────────────────────────────────────────
-function startGPS() {
-  if (!navigator.geolocation) {
-    setDemoMode(); return;
-  }
+function startGPS(){
+  if(!navigator.geolocation){setDemoMode();return;}
   navigator.geolocation.watchPosition(
-    pos => {
-      document.getElementById('gpsDot').className = 'gps-dot active';
-      document.getElementById('gpsLabel').textContent = 'GPS受信中';
-      setPlayerPos(pos.coords.latitude, pos.coords.longitude);
-    },
-    err => {
-      setDemoMode();
-    },
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 3000 }
-  );
+    pos=>{document.getElementById('gpsDot').className='gps-dot active';
+      document.getElementById('gpsLabel').textContent='GPS受信中';
+      setPlayerPos(pos.coords.latitude,pos.coords.longitude);},
+    ()=>setDemoMode(),{enableHighAccuracy:true,timeout:8000,maximumAge:3000});
+}
+function setDemoMode(){
+  document.getElementById('gpsLabel').textContent='デモモード';
+  document.getElementById('demoBar').style.display='flex';
+  setPlayerPos(33.9425,130.9618);
+  map.on('click',e=>{setPlayerPos(e.latlng.lat,e.latlng.lng);map.panTo(e.latlng);});
 }
 
-function setDemoMode() {
-  demoMode = true;
-  document.getElementById('gpsDot').className = 'gps-dot';
-  document.getElementById('gpsLabel').textContent = 'デモモード';
-  document.getElementById('demoBar').style.display = 'flex';
-  // デモ用：門司港駅付近に仮配置
-  setPlayerPos(33.9425, 130.9618);
-  map.on('click', e => {
-    setPlayerPos(e.latlng.lat, e.latlng.lng);
-    map.panTo(e.latlng);
+// ══ 地図モーダル ══════════════════════════════════
+function openMapModal(d){
+  currentDungeon=d;
+  const dist=getDist(d),nearby=isNearby(d),isCleared=cleared[d.id];
+  document.getElementById('modalIcon').textContent=d.icon;
+  document.getElementById('modalTitle').textContent=d.name;
+  document.getElementById('modalSubtitle').textContent=`Lv.${d.level}　${d.theme}`;
+  document.getElementById('modalDesc').textContent=d.desc;
+  document.getElementById('enemyList').innerHTML=d.enemies.map(e=>`<span class="enemy-tag">${e}</span>`).join('');
+  const btn=document.getElementById('enterBtn');
+  if(isCleared){btn.textContent='✅ クリア済';btn.disabled=true;}
+  else if(nearby){btn.textContent='▶ ダンジョンへ突入';btn.disabled=false;
+    btn.onclick=()=>{document.getElementById('modalOverlay').classList.remove('open');enterDungeon(d);};}
+  else{btn.textContent=dist!==null?`🔒 あと約${dist}m`:'🔒 GPS未取得';btn.disabled=true;}
+  document.getElementById('modalOverlay').classList.add('open');
+  map.panTo([d.lat,d.lng]);
+}
+function closeMapModal(e){
+  if(e.target===document.getElementById('modalOverlay'))
+    document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// ══ ダンジョン突入 ════════════════════════════════
+function enterDungeon(d){
+  currentDungeon=d;
+  // 初回のみsolved初期化
+  d.quizzes.forEach(q=>{if(solvedQuizzes[q.id]===undefined)solvedQuizzes[q.id]=false;});
+  document.getElementById('expTitle').textContent=d.name+'　謎解き';
+  document.getElementById('expSub').textContent=d.theme;
+  renderExplore();
+  document.getElementById('exploreScreen').classList.add('open');
+}
+
+// ══ 探索画面描画 ══════════════════════════════════
+function renderExplore(){
+  const d=currentDungeon;
+  const solvedCount=d.quizzes.filter(q=>solvedQuizzes[q.id]).length;
+  const total=d.quizzes.length;
+  const allSolved=solvedCount===total;
+
+  let html=`<div class="progress-row">
+    <span class="progress-label">正解 ${solvedCount}/${total}</span>
+    <div class="progress-bar"><div class="progress-fill" style="width:${(solvedCount/total)*100}%"></div></div>
+  </div>`;
+
+  d.quizzes.forEach((q,i)=>{
+    const solved=solvedQuizzes[q.id];
+    const isFree=q.answers.includes('自由回答');
+    html+=`<div class="quiz-card${solved?' solved':''}">
+      <div class="quiz-card-header">
+        <span class="quiz-num">${q.label}</span>
+        <span class="quiz-card-title">${isFree?'施設の中を観察しよう':'紙の問題に答えよう'}</span>
+        ${solved?'<span class="quiz-solved-badge">✅ 正解</span>':''}
+      </div>
+      ${!solved?`
+        <div class="answer-row">
+          <input class="answer-input" id="input-${q.id}" type="text" placeholder="${isFree?'気づいたことを入力':'こたえを入力'}" autocomplete="off">
+          <button class="submit-btn" onclick="submitAnswer('${q.id}')">決定</button>
+        </div>
+        <div class="answer-feedback" id="fb-${q.id}" style="display:none"></div>
+      `:''}
+    </div>`;
+  });
+
+  if(allSolved){
+    html+=`<div class="boss-banner" onclick="startBoss()">
+      <div class="boss-banner-title">👹 ボス出現！</div>
+      <div class="boss-banner-sub">${d.boss.name}に挑む</div>
+    </div>`;
+  }
+
+  document.getElementById('exploreBody').innerHTML=html;
+
+  // Enterキーで決定
+  d.quizzes.forEach(q=>{
+    const inp=document.getElementById('input-'+q.id);
+    if(inp) inp.addEventListener('keydown',e=>{if(e.key==='Enter')submitAnswer(q.id);});
   });
 }
 
-// ─── モーダル ────────────────────────────────────────────
-function openModal(d) {
-  selectedDungeon = d;
-  const dist = playerLat !== null
-    ? Math.round(calcDist(playerLat, playerLng, d.lat, d.lng))
-    : null;
-  const nearby = dist !== null && dist <= ENTER_DISTANCE;
+// ══ 回答判定 ══════════════════════════════════════
+function normalize(str){
+  return str.trim()
+    .toLowerCase()
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0))
+    .replace(/\s+/g,'');
+}
 
-  document.getElementById('modalIcon').textContent = d.icon;
-  document.getElementById('modalTitle').textContent = d.name;
-  document.getElementById('modalSubtitle').textContent = `Lv.${d.level}　${d.theme}`;
-  document.getElementById('modalDesc').textContent = d.desc;
+function submitAnswer(qid){
+  const q=currentDungeon.quizzes.find(x=>x.id===qid);
+  const inp=document.getElementById('input-'+qid);
+  const fb=document.getElementById('fb-'+qid);
+  if(!q||!inp)return;
 
-  const eList = document.getElementById('enemyList');
-  eList.innerHTML = d.enemies.map(e => `<span class="enemy-tag">${e}</span>`).join('');
+  const userAns=normalize(inp.value);
+  if(!userAns){inp.focus();return;}
 
-  const btn = document.getElementById('enterBtn');
-  if (nearby) {
-    btn.textContent = '▶ ダンジョンへ突入';
-    btn.style.opacity = '1';
-    btn.disabled = false;
-    btn.onclick = () => alert(`「${d.name}」へ突入！\n（バトル画面は次のフェーズで実装します）`);
+  // 自由回答は常に正解
+  const isFree=q.answers.includes('自由回答');
+  const correct=isFree||q.answers.some(a=>normalize(a)===userAns);
+
+  fb.style.display='block';
+  if(correct){
+    inp.classList.add('correct');inp.disabled=true;
+    inp.closest('.answer-row').querySelector('.submit-btn').disabled=true;
+    fb.className='answer-feedback ok';
+    fb.textContent=isFree?'✅ 記録した！':'🎉 正解！';
+    solvedQuizzes[qid]=true;
+    setTimeout(()=>renderExplore(),700);
   } else {
-    btn.textContent = dist !== null ? `🔒 あと約${dist}m` : '🔒 GPS未取得';
-    btn.style.opacity = '0.5';
-    btn.disabled = true;
-  }
-
-  document.getElementById('modalOverlay').classList.add('open');
-
-  // 地図をそのダンジョンに移動
-  map.panTo([d.lat, d.lng]);
-}
-
-function closeModal(e) {
-  if (e.target === document.getElementById('modalOverlay')) {
-    document.getElementById('modalOverlay').classList.remove('open');
+    inp.classList.add('wrong');
+    fb.className='answer-feedback ng';
+    fb.textContent='❌ ちがうよ、もう一度！';
+    setTimeout(()=>{inp.classList.remove('wrong');fb.style.display='none';inp.value='';inp.focus();},1200);
   }
 }
 
-// ─── 起動 ────────────────────────────────────────────────
+function leaveExplore(){document.getElementById('exploreScreen').classList.remove('open');}
+
+// ══ ボス戦 ════════════════════════════════════════
+function startBoss(){
+  const d=currentDungeon;
+  bossMaxHp=d.boss.hp;bossHp=d.boss.hp;
+  playerMaxHp=100;playerHp=100;battleLock=false;
+  document.getElementById('bossAreaName').textContent=d.name;
+  document.getElementById('bossEmoji').textContent=d.boss.emoji;
+  document.getElementById('bossName').textContent=d.boss.name;
+  document.getElementById('battleLog').textContent=`${d.boss.name}が現れた！`;
+  updateBossUI();
+  document.getElementById('attackBtn').disabled=false;
+  document.getElementById('skillBtn').disabled=false;
+  document.getElementById('exploreScreen').classList.remove('open');
+  document.getElementById('bossScreen').classList.add('open');
+}
+function updateBossUI(){
+  document.getElementById('bossHpNum').textContent=`${bossHp}/${bossMaxHp}`;
+  document.getElementById('bossHpFill').style.width=`${(bossHp/bossMaxHp)*100}%`;
+  document.getElementById('playerHpNum').textContent=`${playerHp}/${playerMaxHp}`;
+  document.getElementById('playerHpFill').style.width=`${(playerHp/playerMaxHp)*100}%`;
+}
+function lockBtns(ms){
+  battleLock=true;document.getElementById('attackBtn').disabled=true;
+  setTimeout(()=>{if(bossHp>0&&playerHp>0){battleLock=false;document.getElementById('attackBtn').disabled=false;}},ms);
+}
+function doAttack(){
+  if(battleLock)return;
+  const myDmg=15+Math.floor(Math.random()*10);
+  bossHp=Math.max(0,bossHp-myDmg);updateBossUI();
+  if(bossHp<=0){battleEnd(true);return;}
+  const bossDmg=currentDungeon.boss.atk+Math.floor(Math.random()*8)-4;
+  playerHp=Math.max(0,playerHp-bossDmg);updateBossUI();
+  document.getElementById('battleLog').textContent=`⚔️ ${myDmg}のダメージ！\n👹 ボスの反撃 ${bossDmg}のダメージ！`;
+  if(playerHp<=0){battleEnd(false);return;}
+  lockBtns(800);
+}
+function doSkill(){
+  if(battleLock)return;
+  const myDmg=35+Math.floor(Math.random()*15);
+  bossHp=Math.max(0,bossHp-myDmg);updateBossUI();
+  document.getElementById('skillBtn').disabled=true;
+  if(bossHp<=0){battleEnd(true);return;}
+  const bossDmg=currentDungeon.boss.atk+Math.floor(Math.random()*8)-4;
+  playerHp=Math.max(0,playerHp-bossDmg);updateBossUI();
+  document.getElementById('battleLog').textContent=`✨ 必殺技！ ${myDmg}の大ダメージ！\n👹 ボスの反撃 ${bossDmg}のダメージ！`;
+  if(playerHp<=0){battleEnd(false);return;}
+  lockBtns(800);
+}
+function battleEnd(win){
+  document.getElementById('attackBtn').disabled=true;document.getElementById('skillBtn').disabled=true;
+  const d=currentDungeon;
+  setTimeout(()=>{
+    document.getElementById('bossScreen').classList.remove('open');
+    if(win){
+      cleared[d.id]=true;updateMarkers();buildCards();
+      document.getElementById('clearTitle').textContent=d.name+'　クリア！';
+      document.getElementById('clearSub').textContent=`${d.boss.name}を倒した！\n${d.name}の謎はすべて解き明かされた。`;
+      document.getElementById('clearScreen').classList.add('open');
+    } else {
+      alert('💀 全滅…\nもう一度挑戦しよう！');
+    }
+  },600);
+}
+function backToMap(){document.getElementById('clearScreen').classList.remove('open');}
+
+// ══ 起動 ══════════════════════════════════════════
 buildCards();
 startGPS();
 </script>
