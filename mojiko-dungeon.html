@@ -1117,7 +1117,6 @@ function backToMap(){
   document.getElementById('clearScreen').classList.remove('open');
 }
 function startGame(){
-  stopBgm();
   const inp = document.getElementById('nameInput');
   playerName = (inp && inp.value.trim()) || '勇者';
   saveGame();
@@ -1324,6 +1323,7 @@ function resetSave(){
     buildCards();
     startGPS();
     checkLastBoss();
+    setTimeout(()=>playBgm('title'), 500);
     if(DUNGEONS.every(d=>cleared[d.id])){
       setTimeout(()=>addLastBossMarker(), 500);
     }
