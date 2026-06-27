@@ -262,6 +262,15 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 .version-badge{font-size:10px;color:var(--text-dim);text-align:center;margin-top:14px;letter-spacing:.05em}
 /* ヘッダーの設定ボタン */
 .settings-btn{background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:4px 8px;font-size:14px;cursor:pointer}
+
+/* ── タイトル画面 ── */
+.title-screen{background:radial-gradient(ellipse at center,#1a1200,var(--bg));align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:32px;text-align:center}
+.title-logo-en{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.4em;color:var(--gold-dim);margin-bottom:4px}
+.title-logo-ja{font-size:32px;font-weight:900;color:var(--gold);line-height:1.2;text-shadow:0 0 20px rgba(200,168,75,.4)}
+.title-icon{font-size:64px;animation:bossFloat 3s ease-in-out infinite;margin:8px 0}
+.title-start-btn{background:var(--gold);color:#0d0d14;border:none;border-radius:10px;padding:16px 48px;font-size:18px;font-weight:900;font-family:'Noto Sans JP',sans-serif;cursor:pointer;letter-spacing:.1em;box-shadow:0 0 20px rgba(200,168,75,.4);animation:glowGold 2s ease-in-out infinite}
+@keyframes glowGold{0%,100%{box-shadow:0 0 10px rgba(200,168,75,.3)}50%{box-shadow:0 0 25px rgba(200,168,75,.7)}}
+.title-version{font-size:10px;color:var(--text-dim);letter-spacing:.1em;margin-top:8px}
 </style>
 </head>
 <body>
@@ -295,8 +304,17 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   <div class="ending-credit">KITAKYUSHU MOJIKO · 北九州市門司港</div>
   <button class="ending-back" onclick="document.getElementById('endingScreen').classList.remove('open')">タイトルへ戻る</button>
 </div>
+<!-- タイトル画面 -->
+<div class="screen open title-screen" id="titleScreen">
+  <div class="title-logo-en">MOJIKO DUNGEON RPG</div>
+  <div class="title-logo-ja">門司港<br>ダンジョン</div>
+  <div class="title-icon">⛩️</div>
+  <button class="title-start-btn" onclick="onTitleStart()">▶ スタート</button>
+  <div class="title-version">v0.5.0　© 2026 えむ / Virtual Mojiko Project</div>
+</div>
+
 <!-- オープニング・名前入力 -->
-<div class="screen open opening-screen" id="openingScreen">
+<div class="screen opening-screen" id="openingScreen">
   <div class="opening-logo">MOJIKO DUNGEON RPG</div>
   <div class="opening-title">門司港ダンジョン</div>
   <div class="opening-story">ある日、門司港の歴史的建物に<br>古代の封印が解かれ、怪物たちが<br>出現した。<br><br>きみの仲間「じーも」と「スナQ」は<br>それぞれのダンジョンに<br>囚われてしまった！<br><br>建物の謎を解き、ボスを倒して<br>仲間を救い出せ！</div>
@@ -1212,6 +1230,25 @@ function showEvalScreen(d, win){
   document.getElementById('evalScreen').classList.add('open');
 }
 
+
+
+// ── タイトル画面 ──────────────────────────────────
+function onTitleStart(){
+  playBgm('title');
+  document.getElementById('titleScreen').classList.remove('open');
+  // セーブデータがあれば名前入力スキップ
+  const hasSave = loadGame();
+  if(hasSave && playerName && playerName !== '勇者'){
+    buildCards();
+    startGPS();
+    checkLastBoss();
+    setTimeout(()=>{
+      if(DUNGEONS.every(d=>cleared[d.id])) addLastBossMarker();
+    }, 500);
+  } else {
+    document.getElementById('openingScreen').classList.add('open');
+  }
+}
 
 // ── 起動・名前入力 ──────────────────────────────────
 
