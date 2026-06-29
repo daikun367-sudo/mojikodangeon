@@ -641,9 +641,31 @@ const DUNGEONS = [
       {id:'t3', label:'問題③', q:'展望室から見える海の向こうは何県？', answers:['山口県','やまぐちけん','山口']},
     ]
   },
+  {
+    id:'idemitsu', name:'出光美術館', icon:'🎨', lat:33.9468, lng:130.9650, level:3,
+    theme:'美の封印回廊',
+    desc:'門司港レトロ地区に建つ美術館。古代の美術品に宿った怨念が展示室を徘徊している。',
+    enemies:['古陶器の亡霊','掛け軸の怨念','封印された美'],
+    boss:{emoji:'🏺', name:'古美術の大封印鬼', hp:160, atk:30},
+    quizzes:[
+      {id:'id1', label:'問題①', q:'この美術館は何年に開館したでしょう？', answers:['1974','1974年']},
+      {id:'id2', label:'問題②', q:'美術館から見える海峡の名前は？', answers:['関門海峡','かんもんかいきょう']},
+      {id:'id3', label:'問題③', q:'建物の外壁は何色？', answers:['白','しろ','白色','クリーム','クリーム色']},
+    ]
+  },
+  {
+    id:'oimatsu', name:'老松公園', icon:'🌲', lat:33.9493, lng:130.9703, level:3,
+    theme:'古木の迷い森',
+    desc:'門司港の丘に広がる緑の公園。樹齢百年を超える松の木に古い精霊が宿っている。',
+    enemies:['古木の精霊','松の怨霊','丘の番人'],
+    boss:{emoji:'🌳', name:'百年松の大精霊', hp:160, atk:30},
+    quizzes:[
+      {id:'oi1', label:'問題①', q:'公園の名前にある「老松」とは何のこと？', answers:['老いた松','老いた松の木','松の木','まつのき','おいたまつ']},
+      {id:'oi2', label:'問題②', q:'公園から見える海峡の向こうは何県？', answers:['山口県','やまぐちけん','山口']},
+      {id:'oi3', label:'問題③', q:'公園内から見える橋の名前は？', answers:['関門橋','かんもんきょう','関門大橋']},
+    ]
+  },
 ];
-
-
 // ラスボス
 const LAST_BOSS = {
   id:'mekarijinja', name:'和布刈神社', icon:'⛩️', lat:33.9523, lng:130.9726, level:10,
@@ -657,6 +679,22 @@ const LAST_BOSS = {
     {id:'lb3', label:'問題③', answers:['自由回答']},
   ]
 };
+
+// 裏ボス（関門橋）
+const SECRET_BOSS = {
+  id:'kanmonbridge', name:'関門橋', icon:'🌉', lat:33.9465, lng:130.9778, level:15,
+  theme:'海峡に眠る真の魔王',
+  desc:'全長1068m、本州と九州を結ぶ巨大な橋。すべての封印を解いた者だけが目にすることができる、真の魔王が眠る場所。',
+  enemies:['海峡の大竜','橋脚の巨神','潮流の魔王'],
+  boss:{emoji:'🐉', name:'真・海峡大竜王', hp:600, atk:70},
+  quizzes:[
+    {id:'kb1', label:'問題①', q:'関門橋の全長は何メートル？', answers:['1068','1068m','1068メートル']},
+    {id:'kb2', label:'問題②', q:'関門橋が開通したのは何年？', answers:['1973','1973年']},
+    {id:'kb3', label:'問題③', q:'関門橋は何県と何県をつなぐ？', answers:['福岡県と山口県','山口県と福岡県','福岡と山口','山口と福岡']},
+  ]
+};
+const SECRET_BOSS_DIST = 500; // 500m以内で出現
+
 const ENTER_DIST = 80;
 
 // プレイヤー状態
@@ -711,7 +749,15 @@ function getDist(d){return playerLat===null?null:Math.round(calcDist(playerLat,p
 // ══ カード描画 ════════════════════════════════════
 function buildCards(){
   const s=document.getElementById('dungeonScroll');s.innerHTML='';
-  DUNGEONS.forEach(d=>{
+  // 近い順にソート（距離不明は末尾）
+  const sorted = [...DUNGEONS].sort((a,b)=>{
+    const da=getDist(a), db=getDist(b);
+    if(da===null&&db===null) return 0;
+    if(da===null) return 1;
+    if(db===null) return -1;
+    return da-db;
+  });
+  sorted.forEach(d=>{
     const dist=getDist(d),nearby=isNearby(d),isCleared=cleared[d.id];
     let cls='dungeon-card'+(isCleared?' cleared':nearby?' nearby':'');
     const card=document.createElement('div');card.className=cls;
@@ -733,6 +779,7 @@ function setPlayerPos(lat,lng){
   if(!playerMarker)playerMarker=L.marker([lat,lng],{icon:makePlayerIcon(),zIndexOffset:1000}).addTo(map);
   else playerMarker.setLatLng([lat,lng]);
   updateMarkers();buildCards();
+  checkSecretBoss();
 }
 function startGPS(){
   if(!navigator.geolocation){setDemoMode();return;}
@@ -1292,6 +1339,51 @@ function checkLastBoss(){
   }
 }
 
+
+// ── 裏ボス出現チェック ──────────────────────────────
+function checkSecretBoss(){
+  // 条件：全ダンジョン＋めかり神社クリア済み
+  const allCleared = DUNGEONS.every(d=>cleared[d.id]);
+  const lastCleared = cleared['mekarijinja'];
+  if(!allCleared || !lastCleared) return;
+  if(cleared['kanmonbridge']) return; // すでにクリア済み
+  if(document.getElementById('secretBossMarkerAdded')) return;
+  if(playerLat===null) return;
+
+  const dist = calcDist(playerLat, playerLng, SECRET_BOSS.lat, SECRET_BOSS.lng);
+  if(dist <= SECRET_BOSS_DIST){
+    showSecretBossUnlock();
+  }
+}
+
+function showSecretBossUnlock(){
+  if(document.getElementById('secretBossMarkerAdded')) return;
+  // マーカー追加
+  const sb = SECRET_BOSS;
+  const icon = L.divIcon({className:'',
+    html:'<div class="custom-marker"><div class="marker-bubble" style="border-color:#ff00ff;box-shadow:0 0 16px rgba(255,0,255,.7);animation:glowRed 1s infinite">'+sb.icon+'</div><div class="marker-label" style="color:#ff88ff">'+sb.name+'</div></div>',
+    iconSize:[80,50],iconAnchor:[40,50]});
+  const m = L.marker([sb.lat,sb.lng],{icon}).addTo(map);
+  m.on('click',()=>openMapModal(sb));
+  const flag=document.createElement('div');
+  flag.id='secretBossMarkerAdded';
+  flag.style.display='none';
+  document.body.appendChild(flag);
+
+  // 出現演出
+  setTimeout(()=>{
+    document.getElementById('unlockScreen').querySelector('.unlock-icon').textContent='🌉';
+    document.getElementById('unlockScreen').querySelector('.unlock-title').innerHTML='真の魔王が目覚めた…！<br>裏ボス出現！';
+    document.getElementById('unlockScreen').querySelector('.unlock-msg').textContent=
+      'すべての封印を解いたきみの前に\n真の魔王が姿を現した。\n\n関門橋に潜む\n真・海峡大竜王に挑め！\n\nこれが本当の最終決戦だ。';
+    document.getElementById('unlockScreen').querySelector('.unlock-ok').textContent='🌉 決戦へ';
+    document.getElementById('unlockScreen').querySelector('.unlock-ok').onclick = ()=>{
+      document.getElementById('unlockScreen').classList.remove('open');
+      map.flyTo([SECRET_BOSS.lat, SECRET_BOSS.lng], 15, {duration:1.5});
+    };
+    document.getElementById('unlockScreen').classList.add('open');
+  }, 500);
+}
 // ── めかり神社解放演出 ──────────────────────────
 function showUnlockScreen(){
   document.getElementById('unlockScreen').classList.add('open');
